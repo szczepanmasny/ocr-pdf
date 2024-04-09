@@ -1,29 +1,23 @@
 <template>
-  <div>
+  <div :class="bem({})">
     <UiFileUploader @upload="setPdfFile" />
-    <FnPdfViewer :pdf="pdfFile" />
-    <div style="position: relative">
-      <div :class="bem({ e: 'preview' })">
-        <canvas
-          ref="canvasEl"
-          :class="bem({ e: 'page' })"
+    <div :class="bem({ e: 'columns' })">
+      <div :class="bem({ e: 'column' })">
+        <PdfViewer
+          v-model:rectangles="rectangles"
+          :pdf="pdfFile"
         />
       </div>
-      <div
-        v-for="(rect, i) of rectangles"
-        :key="i"
-        :style="{
-          border: '1px solid red',
-          position: 'absolute',
-          width: `${rect.width}px`,
-          height: `${rect.height}px`,
-          top: `${rect.top}px`,
-          left: `${rect.left}px`,
-        }"
-      ></div>
-    </div>
-    <div>
-      {{ convertedText }}
+      <div :class="bem({ e: 'column' })">
+        <div style="position: relative">
+          <div :class="bem({ e: 'preview' })">
+            <canvas
+              ref="canvasEl"
+              :class="bem({ e: 'page' })"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -31,15 +25,10 @@
 <script setup lang="ts">
 import { createWorker } from 'tesseract.js'
 import { ref } from 'vue'
-import { UiFileUploader, FnPdfViewer } from '@/components'
+import { UiFileUploader } from '@/components'
 import { defineBem } from '@/helpers'
-
-type Rectangle = {
-  left: number
-  top: number
-  width: number
-  height: number
-}
+import PdfViewer from './PdfViewer'
+import { RectangleOptions } from '@/models/rectangle'
 
 const pdfFile = ref<string | undefined>(undefined)
 const convertedText = ref('')
@@ -47,20 +36,7 @@ const page = ref(1)
 const imgSrc = ref<string | Uint8Array | undefined>(undefined)
 const bem = defineBem('app')
 
-const rectangles: Rectangle[] = [
-  {
-    left: 0,
-    top: 0,
-    width: 500,
-    height: 250,
-  },
-  {
-    left: 500,
-    top: 0,
-    width: 500,
-    height: 250,
-  },
-]
+const rectangles = ref<RectangleOptions[]>([])
 const setPdfFile = (file: File | FileList) => {
   pdfFile.value = URL.createObjectURL(file as File)
   page.value = 1
@@ -87,4 +63,21 @@ const getTextFromImage = async () => {
 
 <style lang="scss">
 @import '@/styles';
+
+.app {
+  display: flex;
+  flex-direction: column;
+  padding: $sp-lg;
+  gap: $sp-md;
+
+  &__columns {
+    display: flex;
+    gap: $sp-md;
+  }
+
+  &__column {
+    width: 30rem;
+    flex-grow: 1;
+  }
+}
 </style>

@@ -24,7 +24,8 @@
     "pdfjs-dist": "^4.0.379",
     "tesseract.js": "^5.0.5",
     "util": "^0.12.5",
-    "vue": "^3.4.21"
+    "vue": "^3.4.21",
+    "vue-draggable-resizable": "^3.0.0"
   },
   "devDependencies": {
     "@types/luxon": "^3.4.2",

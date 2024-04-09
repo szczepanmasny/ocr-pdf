@@ -3,10 +3,11 @@
     ref="viewerEl"
     :class="bem({})"
   >
+  {{ rectangles }}
     <div :class="bem({ e: 'toolbar' })">
       <div :class="bem({ e: 'toolbar-chunk' })">
         <div :class="bem({ e: 'toolbar-chunk-item' })">
-          Strona
+          Page
           <UiInput
             :model-value="currentPage"
             type="number"
@@ -14,7 +15,7 @@
             :max="pages"
             @update:model-value="renderPage({ page: $event })"
           />
-          z {{ pages }}
+          from {{ pages }}
         </div>
         <div :class="bem({ e: 'toolbar-chunk-item' })">
           <UiIconButton
@@ -35,37 +36,11 @@
       </div>
       <div :class="bem({ e: 'toolbar-chunk' })">
         <div :class="bem({ e: 'toolbar-chunk-item' })">
-          <UiInput
-            :model-value="scaleString"
-            type="number"
-            :class="bem({ e: 'scale-input' })"
-            :min="minScale"
-            :max="maxScale"
-            :step="5"
-            @update:model-value="renderPage({ scale: $event })"
-          />
-          %
-        </div>
-        <div :class="bem({ e: 'toolbar-chunk-item' })">
-          <UiIconButton
-            :disabled="scale === minScale"
-            :icon="mdiMinus"
-            theme="primary"
-            tooltip="Pomniejsz"
-            @click="renderPage({ scale: prevScale })"
-          />
-          <UiIconButton
-            :disabled="scale === maxScale"
-            :icon="mdiPlus"
-            theme="primary"
-            tooltip="Powiększ"
-            @click="renderPage({ scale: nextScale })"
-          />
           <UiIconButton
             :icon="mdiArrowExpandAll"
             theme="primary"
-            tooltip="Dopasuj do szerokości okna"
-            @click="renderPage({ fitToViewport: true })"
+            tooltip="Add selection"
+            @click="addRectangle"
           />
         </div>
       </div>
@@ -74,27 +49,39 @@
       </div>
     </div>
     <div :class="bem({ e: 'preview' })">
-      <canvas
-        ref="canvasEl"
-        :class="bem({ e: 'page' })"
-      />
+      <div
+        :class="bem({ e: 'page-wrapper' })"
+      >
+        <template v-for="i of rectangles.length" :key="i">
+          <Rectangle v-model="rectangles[i - 1]">
+            {{ rectangles[i] }}
+          </Rectangle>
+        </template>
+        <canvas
+          ref="canvasEl"
+          :class="bem({ e: 'page' })"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-export default { name: 'FnPdfViewer' }
+export default { name: 'AppPdfViewer' }
 </script>
 
 <script lang="ts" setup>
 import { defineBem } from '@/helpers'
 import { UiInput, UiIconButton } from '@/components/Ui'
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { PDFDocumentProxy } from 'pdfjs-dist'
 import { usePdfjs } from '@/plugins'
-import { mdiArrowExpandAll, mdiChevronLeft, mdiChevronRight, mdiMinus, mdiPlus } from '@mdi/js'
+import { mdiArrowExpandAll, mdiChevronLeft, mdiChevronRight } from '@mdi/js'
+import Rectangle from './Rectangle'
+import { RectangleOptions } from '@/models'
 
-const bem = defineBem('fn-pdf-viewer')
+const rectangles = defineModel<RectangleOptions[]>('rectangles', {required: true})
+
 const props = withDefaults(
   defineProps<{
     pdf?: string | URL | null
@@ -108,24 +95,18 @@ const props = withDefaults(
     type: null,
   },
 )
+
+const bem = defineBem('app-pdf-viewer')
+
 const pdfjs = usePdfjs()
-
-const scaleOptions = [25, 50, 70, 85, 100, 125, 150, 175, 200, 300, 400]
-
-const minScale = scaleOptions[0]
-const maxScale = scaleOptions.at(-1)
-const prevScale = computed(() => [...scaleOptions].reverse().find((s) => s < scale.value))
-const nextScale = computed(() => scaleOptions.find((s) => s > scale.value))
 
 const viewerEl = ref<HTMLElement | null>(null)
 const canvasEl = ref<HTMLCanvasElement | null>(null)
 const currentPage = ref(1)
-const scale = ref(1)
+const scale = ref(200)
 const rotation = ref(0)
 const pages = ref(0)
 let PdfDoc: PDFDocumentProxy | null = null
-
-const scaleString = computed(() => Math.round(scale.value))
 
 type RenderPageParams = {
   page?: number | string | null
@@ -174,11 +155,20 @@ const initDoc = async () => {
   if (!canvasEl.value || !props.pdf) return
   const loadingTask = pdfjs.getDocument(props.pdf)
   PdfDoc = await loadingTask.promise
-  pages.value = PdfDoc.numPages
+  pages.value = PdfDoc?.numPages ?? 0
   renderPage({
     page: 1,
-    fitToViewport: true,
+    fitToViewport: false,
   })
+}
+
+const addRectangle = () => {
+  rectangles.value.push({
+      top: 0,
+      left: 0,
+      width: 100,
+      height: 100
+    })
 }
 
 onMounted(() => {
@@ -193,4 +183,54 @@ watch(
 )
 </script>
 
-<style lang="scss" src="./styles.scss" />
+<style lang="scss">
+.app-pdf-viewer {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  &__toolbar {
+    background-color: $color-primary;
+    color: $color-white;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: $sp-lg;
+    justify-content: space-between;
+    padding: $sp-xs;
+  }
+
+  &__toolbar-chunk {
+    display: flex;
+    align-items: center;
+    gap: $sp-md;
+  }
+
+  &__toolbar-chunk-item {
+    display: flex;
+    align-items: center;
+    gap: $sp-xs;
+  }
+
+  &__pager-input {
+    width: 6rem;
+  }
+
+  &__scale-input {
+    width: 6rem;
+  }
+
+  &__preview {
+    text-align: center;
+    flex-grow: 1;
+    overflow: auto auto;
+    background-color: $color-disabled;
+    display: flex;
+    align-items: center;
+  }
+
+  &__page-wrapper {
+    position: relative;
+  }
+}
+</style>
