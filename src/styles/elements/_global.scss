@@ -1,0 +1,9 @@
+@import '@fontsource/ubuntu/index.css';
+
+body {
+  height: 100vh;
+  color: $color-text;
+  font-size: 2rem;
+  font-family: 'poppins', sans-serif;
+  overflow-wrap: break-word;
+}

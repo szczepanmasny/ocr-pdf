@@ -1,0 +1,18 @@
+{
+  "extends": [
+    "stylelint-config-recommended-scss",
+    "stylelint-config-html/vue",
+    "stylelint-prettier/recommended"
+  ],
+  "rules": {
+    "no-empty-source": null,
+    "scss/no-global-function-names": null,
+    "no-descending-specificity": null,
+    "length-zero-no-unit": true,
+    "color-named": "never",
+    "shorthand-property-no-redundant-values": true,
+    "declaration-block-no-redundant-longhand-properties": true,
+    "selector-pseudo-element-colon-notation": "double",
+    "color-hex-length": "short"
+  }
+}

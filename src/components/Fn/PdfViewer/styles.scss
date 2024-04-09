@@ -1,0 +1,45 @@
+.fn-pdf-viewer {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 60rem;
+
+  &__toolbar {
+    background-color: $color-primary;
+    color: $color-white;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: $sp-lg;
+    justify-content: space-between;
+    padding: $sp-xs;
+  }
+
+  &__toolbar-chunk {
+    display: flex;
+    align-items: center;
+    gap: $sp-md;
+  }
+
+  &__toolbar-chunk-item {
+    display: flex;
+    align-items: center;
+    gap: $sp-xs;
+  }
+
+  &__pager-input {
+    width: 6rem;
+  }
+
+  &__scale-input {
+    width: 6rem;
+  }
+
+  &__preview {
+    text-align: center;
+    height: 0;
+    flex-grow: 1;
+    overflow: auto auto;
+    background-color: $color-disabled;
+  }
+}

@@ -1,0 +1,158 @@
+@mixin simple-wrap($min-width, $sizing-type: auto-fill, $gap: $sp-lg $sp-md) {
+  display: grid;
+  justify-content: center;
+  grid-template-columns: repeat($sizing-type, minmax($min-width, 1fr));
+  gap: $gap;
+  margin: auto;
+  width: 100%;
+
+  & > * {
+    width: auto;
+    margin: 0;
+  }
+}
+@mixin blend($color: $color-dark) {
+  position: relative;
+
+  &::before {
+    content: '';
+    background-color: $color;
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+}
+
+@mixin styled-scrollbar($color: $color-dark) {
+  // Firefox
+  scrollbar-color: $color;
+  scrollbar-width: thin;
+
+  // Google Chrome
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $color;
+    box-shadow: $shadow-depressed;
+    border-radius: $border-radius-main;
+  }
+}
+@mixin background($attachment: scroll) {
+  background-blend-mode: saturation;
+  background-attachment: $attachment;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+@mixin background-dark($attachment: scroll) {
+  @include background($attachment);
+  color: $color-text-dark;
+  background-color: $color-overlay;
+}
+@mixin background-light($attachment: scroll) {
+  @include background($attachment);
+  color: $color-text;
+  background-color: rgba($color-white, 0.4);
+}
+@mixin background-image($url, $attachment: scroll) {
+  background-image: url($url);
+  background-blend-mode: multiply;
+  background-attachment: $attachment;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+@mixin background-image-fullscreen($path) {
+  $url: 'https://wowit.b-cdn.net/' + $path;
+
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+
+  @include on-xl-and-up() {
+    background-image: url($url + '?width=1920');
+  }
+
+  @include on-lg-and-down() {
+    background-image: url($url + '?width=1300');
+  }
+
+  @include on-md-and-down() {
+    background-image: url($url + '?width=1060');
+  }
+
+  @include on-sm-and-down() {
+    background-image: url($url + '?width=768');
+  }
+
+  @include on-xs-only() {
+    background-image: url($url + '?width=576');
+  }
+}
+@mixin breakpoint-up($breakpoint) {
+  @media (min-width: $breakpoint) {
+    @content;
+  }
+}
+@mixin breakpoint-down($breakpoint) {
+  @media (max-width: $breakpoint) {
+    @content;
+  }
+}
+@mixin on-xs-only {
+  @include breakpoint-down($sm) {
+    @content;
+  }
+}
+@mixin on-sm-and-up {
+  @include breakpoint-up($sm) {
+    @content;
+  }
+}
+@mixin on-sm-and-down {
+  @include breakpoint-down($md) {
+    @content;
+  }
+}
+@mixin on-md-and-up {
+  @include breakpoint-up($md) {
+    @content;
+  }
+}
+@mixin on-md-and-down {
+  @include breakpoint-down($lg) {
+    @content;
+  }
+}
+@mixin on-lg-and-up {
+  @include breakpoint-up($lg) {
+    @content;
+  }
+}
+@mixin on-lg-and-down {
+  @include breakpoint-down($xl) {
+    @content;
+  }
+}
+@mixin on-xl-and-up {
+  @include breakpoint-up($xl) {
+    @content;
+  }
+}
+@mixin on-xl-and-down {
+  @include breakpoint-down($xxl) {
+    @content;
+  }
+}
+@mixin on-xxl-and-up {
+  @include breakpoint-up($xxl) {
+    @content;
+  }
+}
