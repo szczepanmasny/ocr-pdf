@@ -36,10 +36,16 @@
       <div :class="bem({ e: 'toolbar-chunk' })">
         <div :class="bem({ e: 'toolbar-chunk-item' })">
           <UiIconButton
-            :icon="mdiArrowExpandAll"
+            :icon="mdiSelectionDrag"
             theme="primary"
             tooltip="Add selection"
             @click="addRectangle"
+          />
+          <UiIconButton
+            :icon="mdiSelectionRemove"
+            theme="primary"
+            tooltip="Remove all selections"
+            @click="removeAllRectangles"
           />
         </div>
       </div>
@@ -76,7 +82,7 @@ import { UiInput, UiIconButton } from '@/components/Ui'
 import { onMounted, ref, watch } from 'vue'
 import { PDFDocumentProxy } from 'pdfjs-dist'
 import { usePdfjs } from '@/plugins'
-import { mdiArrowExpandAll, mdiChevronLeft, mdiChevronRight } from '@mdi/js'
+import { mdiChevronLeft, mdiChevronRight, mdiSelectionDrag, mdiSelectionRemove } from '@mdi/js'
 import Rectangle from './Rectangle'
 import { RectangleOptions } from '@/models'
 
@@ -171,6 +177,10 @@ const addRectangle = () => {
     width: 100,
     height: 100,
   })
+}
+
+const removeAllRectangles = () => {
+  rectangles.value = []
 }
 
 onMounted(() => {
