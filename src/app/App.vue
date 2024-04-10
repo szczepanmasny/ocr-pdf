@@ -6,9 +6,10 @@
       :class="bem({ e: 'columns' })"
     >
       <PdfViewer
-        v-model:rectangles="rectangles"
+        ref="pdfViewer"
+        v-model:pageData="pages[page]"
+        v-model:pages="pages"
         v-model:img-src="imgSrc"
-        v-model:text="text"
         v-model:page="page"
         :pdf="pdfFile"
         :class="bem({ e: 'pdf-viewer' })"
@@ -18,32 +19,35 @@
         <UiButton
           block
           @click="getTextFromImage"
-          >Get text</UiButton
+          >Get text from this page</UiButton
         >
       </div>
 
-      <div :class="bem({ e: 'text' })">
-        {{ text[page] }}
+      <div
+        v-if="pages[page]"
+        :class="bem({ e: 'text' })"
+      >
+        {{ pages[page].text }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { createWorker } from 'tesseract.js'
+import { createScheduler, createWorker } from 'tesseract.js'
 import { ref } from 'vue'
 import { UiFileUploader, UiButton } from '@/components'
 import { defineBem } from '@/helpers'
 import PdfViewer from './PdfViewer'
-import { RectangleOptions } from '@/models/rectangle'
+import { PageData } from '@/models'
 
 const pdfFile = ref<string | undefined>(undefined)
-const text = ref<string[][]>([])
 const page = ref(1)
 const imgSrc = ref<string | undefined>(undefined)
 const bem = defineBem('app')
+const pages = ref<PageData[]>([])
+const pdfViewer = ref<InstanceType<typeof PdfViewer> | null>(null)
 
-const rectangles = ref<RectangleOptions[]>([])
 const setPdfFile = (file: File | FileList) => {
   pdfFile.value = URL.createObjectURL(file as File)
   page.value = 1
@@ -53,18 +57,19 @@ const getTextFromImage = async () => {
   if (!imgSrc.value) return
   const worker = await createWorker('pol')
   let tmpText: string[] = []
-  if (!rectangles.value.length) {
+  const rectangles = pages.value[page.value].rectangles
+  if (!rectangles?.length) {
     const { data } = await worker.recognize(imgSrc.value)
     tmpText = [data.text]
   } else {
-    for (let i = 0; i < rectangles.value.length; i++) {
+    for (let i = 0; i < rectangles.length; i++) {
       const { data } = await worker.recognize(imgSrc.value, {
-        rectangle: { ...rectangles.value[i] },
+        rectangle: { ...rectangles[i] },
       })
       tmpText.push(data.text)
     }
   }
-  text.value[page.value] = tmpText
+  pages.value[page.value].text = tmpText
   await worker.terminate()
 }
 </script>

@@ -11,10 +11,10 @@
             :model-value="page"
             type="number"
             :class="bem({ e: 'pager-input' })"
-            :max="pages"
+            :max="totalPages"
             @update:model-value="renderPage({ page: $event })"
           />
-          from {{ pages }}
+          from {{ totalPages }}
         </div>
         <div :class="bem({ e: 'toolbar-chunk-item' })">
           <UiIconButton
@@ -25,7 +25,7 @@
             @click="renderPage({ page: page - 1 })"
           />
           <UiIconButton
-            :disabled="page >= pages"
+            :disabled="page >= totalPages"
             :icon="mdiChevronRight"
             theme="primary"
             tooltip="Następna strona"
@@ -47,18 +47,44 @@
             tooltip="Remove all selections"
             @click="removeAllRectangles"
           />
+          <UiIconButton
+            :icon="mdiReload"
+            theme="primary"
+            tooltip="Remove all selections"
+            @click="useRectanglesTemplate"
+          />
+        </div>
+        <div :class="bem({ e: 'toolbar-chunk-item' })">
+          <UiIconButton
+            :icon="mdiBookOpenPageVariantOutline"
+            theme="primary"
+            tooltip="Save template for all pages"
+            @click="saveRectanglesForAllPages"
+          />
+          <UiIconButton
+            :icon="mdiPagePrevious"
+            theme="primary"
+            tooltip="Save template for even pages"
+            @click="saveRectanglesForEvenPages"
+          />
+          <UiIconButton
+            :icon="mdiPageNext"
+            theme="primary"
+            tooltip="Save template for odd pages"
+            @click="saveRectanglesForOddPages"
+          />
         </div>
       </div>
     </div>
     <div :class="bem({ e: 'preview' })">
       <div :class="bem({ e: 'page-wrapper' })">
-        <template
-          v-for="i of rectangles.length"
-          :key="i"
-        >
-          <Rectangle v-model="rectangles[i - 1]">
-            {{ rectangles[i] }}
-          </Rectangle>
+        <template v-if="pageData?.rectangles">
+          <template
+            v-for="i of pageData.rectangles.length"
+            :key="i"
+          >
+            <Rectangle v-model="pageData.rectangles[i - 1]" />
+          </template>
         </template>
         <canvas
           ref="canvasEl"
@@ -76,16 +102,25 @@ export default { name: 'AppPdfViewer' }
 <script lang="ts" setup>
 import { defineBem } from '@/helpers'
 import { UiInput, UiIconButton } from '@/components/Ui'
-import { onMounted, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { PDFDocumentProxy } from 'pdfjs-dist'
 import { usePdfjs } from '@/plugins'
-import { mdiChevronLeft, mdiChevronRight, mdiSelectionDrag, mdiSelectionRemove } from '@mdi/js'
+import {
+  mdiBookOpenPageVariantOutline,
+  mdiChevronLeft,
+  mdiChevronRight,
+  mdiPageNext,
+  mdiPagePrevious,
+  mdiReload,
+  mdiSelectionDrag,
+  mdiSelectionRemove,
+} from '@mdi/js'
 import Rectangle from './Rectangle'
-import { RectangleOptions } from '@/models'
+import { PageData, RectangleOptions } from '@/models'
 
-const rectangles = defineModel<RectangleOptions[]>('rectangles', { required: true })
+const pageData = defineModel<PageData>('pageData')
+const pages = defineModel<PageData[]>('pages', { required: true })
 const imgSrc = defineModel<string | undefined>('imgSrc')
-const text = defineModel<string[][]>('text', { required: true })
 const page = defineModel<number>('page', { required: true })
 
 const props = withDefaults(
@@ -106,33 +141,42 @@ const bem = defineBem('app-pdf-viewer')
 
 const pdfjs = usePdfjs()
 
+const oddPagesRectangles = ref<RectangleOptions[] | undefined>(undefined)
+const evenPagesRectangles = ref<RectangleOptions[] | undefined>(undefined)
 const viewerEl = ref<HTMLElement | null>(null)
 const canvasEl = ref<HTMLCanvasElement | null>(null)
-const scale = ref(200)
 const rotation = ref(0)
-const pages = ref(0)
+
+const totalPages = computed(() => pages.value.length)
+
 let PdfDoc: PDFDocumentProxy | null = null
 
 type RenderPageParams = {
   page?: number | string | null
   scale?: number | string | null
 }
+const useRectanglesTemplate = () => {
+  if (pageData.value) {
+    pageData.value.rectangles =
+      page.value % 2 === 0 ? evenPagesRectangles.value : oddPagesRectangles.value
+  }
+}
 
 const renderPage = async (p: RenderPageParams) => {
   if (!PdfDoc || !canvasEl.value) return
   const sanitizedPage = Number(p.page ?? page.value)
   const isPageIncorrect =
-    !Number.isInteger(sanitizedPage) || sanitizedPage <= 0 || sanitizedPage > pages.value
+    !Number.isInteger(sanitizedPage) || sanitizedPage <= 0 || sanitizedPage > totalPages.value
   if (isPageIncorrect) return
   page.value = sanitizedPage
   const pageProxy = await PdfDoc.getPage(sanitizedPage)
 
   const viewerWidth = (viewerEl.value?.clientWidth ?? 0) - 40
   const scale1Width = pageProxy.getViewport({ scale: 1 }).width
-  scale.value = ((viewerWidth ?? 0) / scale1Width) * 100
+  const scale = ((viewerWidth ?? 0) / scale1Width) * 100
 
   const viewportParams = {
-    scale: scale.value / 100,
+    scale: scale / 100,
     rotation: rotation.value,
   }
 
@@ -150,40 +194,64 @@ const renderPage = async (p: RenderPageParams) => {
   }
   await pageProxy.render(renderContext).promise
   imgSrc.value = canvasEl.value.toDataURL()
+  if (!pageData.value?.rectangles) useRectanglesTemplate()
 }
 
 const initDoc = async () => {
   if (!canvasEl.value || !props.pdf) return
   const loadingTask = pdfjs.getDocument(props.pdf)
   PdfDoc = await loadingTask.promise
-  pages.value = PdfDoc?.numPages ?? 0
-  text.value = Array.from(Array(pages.value).keys()).map(() => [])
-  renderPage({
-    page: 1,
+  if (!PdfDoc) return
+  pages.value = Array.from(Array(PdfDoc.numPages).keys()).map(() => ({
+    text: [],
+  }))
+  nextTick(() => {
+    renderPage({
+      page: 1,
+    })
   })
 }
 
 const addRectangle = () => {
-  rectangles.value.push({
-    top: 0,
-    left: 0,
-    width: 100,
-    height: 100,
-  })
+  if (!pageData.value) return
+  pageData.value.rectangles = [
+    ...(pageData.value.rectangles ?? []),
+    {
+      top: 100,
+      left: 100,
+      width: 200,
+      height: 200,
+    },
+  ]
 }
 
 const removeAllRectangles = () => {
-  rectangles.value = []
+  if (!pageData.value) return
+  pageData.value.rectangles = []
 }
 
-onMounted(() => {
-  initDoc()
-})
+const saveRectanglesForEvenPages = () => {
+  if (!pageData.value?.rectangles) return
+  evenPagesRectangles.value = pageData.value.rectangles.map((r) => ({ ...r }))
+}
+
+const saveRectanglesForOddPages = () => {
+  if (!pageData.value?.rectangles) return
+  oddPagesRectangles.value = pageData.value.rectangles.map((r) => ({ ...r }))
+}
+
+const saveRectanglesForAllPages = () => {
+  saveRectanglesForEvenPages()
+  saveRectanglesForOddPages()
+}
 
 watch(
   () => props.pdf,
   () => {
     initDoc()
+  },
+  {
+    immediate: true,
   },
 )
 </script>

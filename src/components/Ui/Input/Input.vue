@@ -11,7 +11,7 @@
 <script lang="ts" setup>
 import { UiInput } from '@vuebits/ui'
 
-const modelValue = defineModel<string | null>()
+const modelValue = defineModel<string | number | null>()
 
 type Props = {
   placeholder?: string | null
