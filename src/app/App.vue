@@ -1,18 +1,27 @@
 <template>
   <div :class="bem({})">
     <UiFileUploader @upload="setPdfFile" />
+    {{ page }}
     <div :class="bem({ e: 'columns' })">
-      <div :class="bem({ e: 'column' })">
-        <PdfViewer
-          v-model:rectangles="rectangles"
-          v-model:img-src="imgSrc"
-          :pdf="pdfFile"
-        />
+      <PdfViewer
+        v-model:rectangles="rectangles"
+        v-model:img-src="imgSrc"
+        v-model:text="text"
+        v-model:page="page"
+        :pdf="pdfFile"
+        :class="bem({ e: 'pdf-viewer' })"
+      />
+
+      <div :class="bem({ e: 'actions' })">
+        <UiButton
+          block
+          @click="getTextFromImage"
+          >Get text</UiButton
+        >
       </div>
 
-      <div :class="bem({ e: 'column' })">
-        <UiButton @click="getTextFromImage">ddd</UiButton>
-        {{ convertedText }}
+      <div :class="bem({ e: 'text' })">
+        {{ text }}
       </div>
     </div>
   </div>
@@ -27,7 +36,7 @@ import PdfViewer from './PdfViewer'
 import { RectangleOptions } from '@/models/rectangle'
 
 const pdfFile = ref<string | undefined>(undefined)
-const convertedText = ref('')
+const text = ref<string[][]>([])
 const page = ref(1)
 const imgSrc = ref<string | undefined>(undefined)
 const bem = defineBem('app')
@@ -41,25 +50,19 @@ const setPdfFile = (file: File | FileList) => {
 const getTextFromImage = async () => {
   if (!imgSrc.value) return
   const worker = await createWorker('pol')
-  let tmpText = ''
+  let tmpText: string[] = []
   if (!rectangles.value.length) {
-    const {
-      data: { text },
-    } = await worker.recognize(imgSrc.value)
-    tmpText = text
+    const { data } = await worker.recognize(imgSrc.value)
+    tmpText = [data.text]
   } else {
     for (let i = 0; i < rectangles.value.length; i++) {
-      console.log(rectangles.value[i])
-      const {
-        data: { text },
-      } = await worker.recognize(imgSrc.value, {
+      const { data } = await worker.recognize(imgSrc.value, {
         rectangle: { ...rectangles.value[i] },
       })
-      console.log(text)
-      tmpText += text
+      tmpText.push(data.text)
     }
   }
-  convertedText.value = tmpText
+  text.value[page.value] = tmpText
   await worker.terminate()
 }
 </script>
@@ -78,9 +81,23 @@ const getTextFromImage = async () => {
     gap: $sp-md;
   }
 
-  &__column {
-    width: 30rem;
+  &__pdf-viewer {
+    min-width: 50rem;
+    max-width: 100%;
     flex-grow: 1;
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 15rem;
+    gap: $sp-sm;
+  }
+
+  &__text {
+    width: 50rem;
+    max-width: 100%;
   }
 }
 </style>

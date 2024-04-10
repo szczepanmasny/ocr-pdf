@@ -8,7 +8,7 @@
         <div :class="bem({ e: 'toolbar-chunk-item' })">
           Page
           <UiInput
-            :model-value="currentPage"
+            :model-value="page"
             type="number"
             :class="bem({ e: 'pager-input' })"
             :max="pages"
@@ -18,18 +18,18 @@
         </div>
         <div :class="bem({ e: 'toolbar-chunk-item' })">
           <UiIconButton
-            :disabled="currentPage <= 1"
+            :disabled="page <= 1"
             :icon="mdiChevronLeft"
             theme="primary"
             tooltip="Poprzednia strona"
-            @click="renderPage({ page: currentPage - 1 })"
+            @click="renderPage({ page: page - 1 })"
           />
           <UiIconButton
-            :disabled="currentPage >= pages"
+            :disabled="page >= pages"
             :icon="mdiChevronRight"
             theme="primary"
             tooltip="Następna strona"
-            @click="renderPage({ page: currentPage + 1 })"
+            @click="renderPage({ page: page + 1 })"
           />
         </div>
       </div>
@@ -88,6 +88,8 @@ import { RectangleOptions } from '@/models'
 
 const rectangles = defineModel<RectangleOptions[]>('rectangles', { required: true })
 const imgSrc = defineModel<string | undefined>('imgSrc')
+const text = defineModel<string[][]>('text', { required: true })
+const page = defineModel<number>('page', { required: true })
 
 const props = withDefaults(
   defineProps<{
@@ -109,7 +111,6 @@ const pdfjs = usePdfjs()
 
 const viewerEl = ref<HTMLElement | null>(null)
 const canvasEl = ref<HTMLCanvasElement | null>(null)
-const currentPage = ref(1)
 const scale = ref(200)
 const rotation = ref(0)
 const pages = ref(0)
@@ -123,16 +124,16 @@ type RenderPageParams = {
 
 const renderPage = async (p: RenderPageParams) => {
   if (!PdfDoc || !canvasEl.value) return
-  const sanitizedPage = Number(p.page ?? currentPage.value)
+  const sanitizedPage = Number(p.page ?? page.value)
   const isPageIncorrect =
     !Number.isInteger(sanitizedPage) || sanitizedPage <= 0 || sanitizedPage > pages.value
   if (isPageIncorrect) return
-  currentPage.value = sanitizedPage
-  const page = await PdfDoc.getPage(sanitizedPage)
+  page.value = sanitizedPage
+  const pageProxy = await PdfDoc.getPage(sanitizedPage)
 
   if (p.fitToViewport) {
     const viewerWidth = (viewerEl.value?.clientWidth ?? 0) - 40
-    const scale1Width = page.getViewport({ scale: 1 }).width
+    const scale1Width = pageProxy.getViewport({ scale: 1 }).width
     scale.value = ((viewerWidth ?? 0) / scale1Width) * 100
   } else if (p.scale) {
     scale.value = Number(p.scale)
@@ -143,7 +144,7 @@ const renderPage = async (p: RenderPageParams) => {
     rotation: rotation.value,
   }
 
-  const viewport = page.getViewport(viewportParams)
+  const viewport = pageProxy.getViewport(viewportParams)
   const ctx = canvasEl.value.getContext('2d')
   if (!ctx) return
   canvasEl.value.width = viewport.width
@@ -155,7 +156,7 @@ const renderPage = async (p: RenderPageParams) => {
     canvasContext: ctx,
     viewport: viewport,
   }
-  await page.render(renderContext).promise
+  await pageProxy.render(renderContext).promise
   imgSrc.value = canvasEl.value.toDataURL()
 }
 
@@ -164,6 +165,7 @@ const initDoc = async () => {
   const loadingTask = pdfjs.getDocument(props.pdf)
   PdfDoc = await loadingTask.promise
   pages.value = PdfDoc?.numPages ?? 0
+  text.value = Array.from(Array(pages.value).keys()).map(() => [])
   renderPage({
     page: 1,
     fitToViewport: false,
