@@ -1,7 +1,6 @@
 <template>
   <div :class="bem({})">
     <UiFileUploader @upload="setPdfFile" />
-    {{ page }}
     <div :class="bem({ e: 'columns' })">
       <PdfViewer
         v-model:rectangles="rectangles"
@@ -21,7 +20,7 @@
       </div>
 
       <div :class="bem({ e: 'text' })">
-        {{ text }}
+        {{ text[page] }}
       </div>
     </div>
   </div>
