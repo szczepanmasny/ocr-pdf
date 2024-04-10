@@ -1,7 +1,10 @@
 <template>
   <div :class="bem({})">
     <UiFileUploader @upload="setPdfFile" />
-    <div :class="bem({ e: 'columns' })">
+    <div
+      v-if="pdfFile"
+      :class="bem({ e: 'columns' })"
+    >
       <PdfViewer
         v-model:rectangles="rectangles"
         v-model:img-src="imgSrc"
@@ -81,7 +84,7 @@ const getTextFromImage = async () => {
   }
 
   &__pdf-viewer {
-    min-width: 50rem;
+    width: 50rem;
     max-width: 100%;
     flex-grow: 1;
   }
@@ -97,6 +100,7 @@ const getTextFromImage = async () => {
   &__text {
     width: 50rem;
     max-width: 100%;
+    flex-grow: 1;
   }
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <UiButton
     v-bind="props"
-    round
+    rounded
     dark
     :disabled="loading || disabled"
     :class="bem({})"

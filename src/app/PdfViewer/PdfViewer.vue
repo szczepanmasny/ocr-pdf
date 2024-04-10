@@ -49,9 +49,6 @@
           />
         </div>
       </div>
-      <div :class="bem({ e: 'toolbar-chunk' })">
-        <div :class="bem({ e: 'toolbar-chunk-item' })"></div>
-      </div>
     </div>
     <div :class="bem({ e: 'preview' })">
       <div :class="bem({ e: 'page-wrapper' })">
@@ -119,7 +116,6 @@ let PdfDoc: PDFDocumentProxy | null = null
 type RenderPageParams = {
   page?: number | string | null
   scale?: number | string | null
-  fitToViewport?: boolean
 }
 
 const renderPage = async (p: RenderPageParams) => {
@@ -131,13 +127,9 @@ const renderPage = async (p: RenderPageParams) => {
   page.value = sanitizedPage
   const pageProxy = await PdfDoc.getPage(sanitizedPage)
 
-  if (p.fitToViewport) {
-    const viewerWidth = (viewerEl.value?.clientWidth ?? 0) - 40
-    const scale1Width = pageProxy.getViewport({ scale: 1 }).width
-    scale.value = ((viewerWidth ?? 0) / scale1Width) * 100
-  } else if (p.scale) {
-    scale.value = Number(p.scale)
-  }
+  const viewerWidth = (viewerEl.value?.clientWidth ?? 0) - 40
+  const scale1Width = pageProxy.getViewport({ scale: 1 }).width
+  scale.value = ((viewerWidth ?? 0) / scale1Width) * 100
 
   const viewportParams = {
     scale: scale.value / 100,
@@ -168,7 +160,6 @@ const initDoc = async () => {
   text.value = Array.from(Array(pages.value).keys()).map(() => [])
   renderPage({
     page: 1,
-    fitToViewport: false,
   })
 }
 
@@ -202,6 +193,7 @@ watch(
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  border-radius: $border-radius-main;
 
   &__toolbar {
     background-color: $color-primary;
@@ -211,7 +203,7 @@ watch(
     align-items: center;
     gap: $sp-lg;
     justify-content: space-between;
-    padding: $sp-xs;
+    padding: $sp-sm;
   }
 
   &__toolbar-chunk {
