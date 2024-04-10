@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { createScheduler, createWorker } from 'tesseract.js'
+import { createWorker } from 'tesseract.js'
 import { ref } from 'vue'
 import { UiFileUploader, UiButton } from '@/components'
 import { defineBem } from '@/helpers'

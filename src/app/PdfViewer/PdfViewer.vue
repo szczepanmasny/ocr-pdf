@@ -102,7 +102,7 @@ export default { name: 'AppPdfViewer' }
 <script lang="ts" setup>
 import { defineBem } from '@/helpers'
 import { UiInput, UiIconButton } from '@/components/Ui'
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { PDFDocumentProxy } from 'pdfjs-dist'
 import { usePdfjs } from '@/plugins'
 import {
@@ -245,13 +245,14 @@ const saveRectanglesForAllPages = () => {
   saveRectanglesForOddPages()
 }
 
+onMounted(() => {
+  initDoc()
+})
+
 watch(
   () => props.pdf,
   () => {
     initDoc()
-  },
-  {
-    immediate: true,
   },
 )
 </script>
