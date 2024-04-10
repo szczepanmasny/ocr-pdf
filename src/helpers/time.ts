@@ -1,4 +1,7 @@
-export function throttle(func: Function, waitTime: number) {
+export const throttle: (...params: any[]) => any = function (
+  func: (...params: any[]) => any,
+  waitTime: number,
+) {
   let isQueued = false
   return () => {
     if (!isQueued) {
@@ -13,7 +16,7 @@ export function throttle(func: Function, waitTime: number) {
 
 export const debounce: (...params: any[]) => any = function (
   func: (...params: any[]) => any,
-  wait: number,
+  waitTime: number,
   immediate: boolean,
 ) {
   let timeout: any
@@ -24,7 +27,7 @@ export const debounce: (...params: any[]) => any = function (
     }
     const callNow = immediate && !timeout
     clearTimeout(timeout)
-    timeout = setTimeout(later, wait)
+    timeout = setTimeout(later, waitTime)
     if (callNow) func.apply(this, args)
   }
 }

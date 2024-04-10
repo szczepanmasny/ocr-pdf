@@ -13,7 +13,6 @@
     @resize-stop="onRectangleModify"
     @drag-stop="onRectangleModify"
   >
-  {{ rectangle }}
   </RectangleDraggableResizable>
 </template>
 
@@ -31,14 +30,14 @@ const bem = defineBem('app-pdf-viewer-rectangle')
 
 const onRectangleModify = (left: number, top: number, width: number, height: number) => {
   rectangle.value = {
-    left: left != null ? left : rectangle.value.left,
-    top: top != null ? top : rectangle.value.top,
-    width: width != null ? width : rectangle.value.width,
-    height: height != null ? height : rectangle.value.height,
+    left: left ?? rectangle.value.left,
+    top: top ?? rectangle.value.top,
+    width: width ?? rectangle.value.width,
+    height: height ?? rectangle.value.height,
   }
 }
 </script>
 
 <style lang="scss">
-@import "vue-draggable-resizable/style.css";
+@import 'vue-draggable-resizable/style.css';
 </style>

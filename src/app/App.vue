@@ -5,18 +5,14 @@
       <div :class="bem({ e: 'column' })">
         <PdfViewer
           v-model:rectangles="rectangles"
+          v-model:img-src="imgSrc"
           :pdf="pdfFile"
         />
       </div>
+
       <div :class="bem({ e: 'column' })">
-        <div style="position: relative">
-          <div :class="bem({ e: 'preview' })">
-            <canvas
-              ref="canvasEl"
-              :class="bem({ e: 'page' })"
-            />
-          </div>
-        </div>
+        <UiButton @click="getTextFromImage">ddd</UiButton>
+        {{ convertedText }}
       </div>
     </div>
   </div>
@@ -25,7 +21,7 @@
 <script setup lang="ts">
 import { createWorker } from 'tesseract.js'
 import { ref } from 'vue'
-import { UiFileUploader } from '@/components'
+import { UiFileUploader, UiButton } from '@/components'
 import { defineBem } from '@/helpers'
 import PdfViewer from './PdfViewer'
 import { RectangleOptions } from '@/models/rectangle'
@@ -33,7 +29,7 @@ import { RectangleOptions } from '@/models/rectangle'
 const pdfFile = ref<string | undefined>(undefined)
 const convertedText = ref('')
 const page = ref(1)
-const imgSrc = ref<string | Uint8Array | undefined>(undefined)
+const imgSrc = ref<string | undefined>(undefined)
 const bem = defineBem('app')
 
 const rectangles = ref<RectangleOptions[]>([])
@@ -44,17 +40,24 @@ const setPdfFile = (file: File | FileList) => {
 
 const getTextFromImage = async () => {
   if (!imgSrc.value) return
-  const worker = await createWorker('pol', 1, {
-    logger: (m) => console.log(m),
-  })
+  const worker = await createWorker('pol')
   let tmpText = ''
-  for (let i = 0; i < rectangles.length; i++) {
+  if (!rectangles.value.length) {
     const {
       data: { text },
-    } = await worker.recognize(imgSrc.value, {
-      rectangle: rectangles[i],
-    })
-    tmpText += text
+    } = await worker.recognize(imgSrc.value)
+    tmpText = text
+  } else {
+    for (let i = 0; i < rectangles.value.length; i++) {
+      console.log(rectangles.value[i])
+      const {
+        data: { text },
+      } = await worker.recognize(imgSrc.value, {
+        rectangle: { ...rectangles.value[i] },
+      })
+      console.log(text)
+      tmpText += text
+    }
   }
   convertedText.value = tmpText
   await worker.terminate()

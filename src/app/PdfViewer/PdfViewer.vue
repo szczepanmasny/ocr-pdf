@@ -3,7 +3,6 @@
     ref="viewerEl"
     :class="bem({})"
   >
-  {{ rectangles }}
     <div :class="bem({ e: 'toolbar' })">
       <div :class="bem({ e: 'toolbar-chunk' })">
         <div :class="bem({ e: 'toolbar-chunk-item' })">
@@ -49,10 +48,11 @@
       </div>
     </div>
     <div :class="bem({ e: 'preview' })">
-      <div
-        :class="bem({ e: 'page-wrapper' })"
-      >
-        <template v-for="i of rectangles.length" :key="i">
+      <div :class="bem({ e: 'page-wrapper' })">
+        <template
+          v-for="i of rectangles.length"
+          :key="i"
+        >
           <Rectangle v-model="rectangles[i - 1]">
             {{ rectangles[i] }}
           </Rectangle>
@@ -80,7 +80,8 @@ import { mdiArrowExpandAll, mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import Rectangle from './Rectangle'
 import { RectangleOptions } from '@/models'
 
-const rectangles = defineModel<RectangleOptions[]>('rectangles', {required: true})
+const rectangles = defineModel<RectangleOptions[]>('rectangles', { required: true })
+const imgSrc = defineModel<string | undefined>('imgSrc')
 
 const props = withDefaults(
   defineProps<{
@@ -149,6 +150,7 @@ const renderPage = async (p: RenderPageParams) => {
     viewport: viewport,
   }
   await page.render(renderContext).promise
+  imgSrc.value = canvasEl.value.toDataURL()
 }
 
 const initDoc = async () => {
@@ -164,11 +166,11 @@ const initDoc = async () => {
 
 const addRectangle = () => {
   rectangles.value.push({
-      top: 0,
-      left: 0,
-      width: 100,
-      height: 100
-    })
+    top: 0,
+    left: 0,
+    width: 100,
+    height: 100,
+  })
 }
 
 onMounted(() => {
