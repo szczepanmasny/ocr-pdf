@@ -203,7 +203,8 @@ const initDoc = async () => {
   PdfDoc = await loadingTask.promise
   if (!PdfDoc) return
   pages.value = Array.from(Array(PdfDoc.numPages).keys()).map(() => ({
-    text: [],
+    text: '',
+    ocrText: '',
   }))
   nextTick(() => {
     renderPage({
@@ -263,6 +264,7 @@ watch(
   display: flex;
   flex-direction: column;
   border-radius: $border-radius-main;
+  border: set-border($color-primary);
 
   &__toolbar {
     background-color: $color-primary;

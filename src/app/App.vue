@@ -23,12 +23,12 @@
         >
       </div>
 
-      <div
+      <Output
         v-if="pages[page]"
+        v-model:text="pages[page].text"
+        :ocr-text="pages[page].ocrText"
         :class="bem({ e: 'text' })"
-      >
-        {{ pages[page].text }}
-      </div>
+      />
     </div>
   </div>
 </template>
@@ -39,6 +39,7 @@ import { ref } from 'vue'
 import { UiFileUploader, UiButton } from '@/components'
 import { defineBem } from '@/helpers'
 import PdfViewer from './PdfViewer'
+import Output from './Output'
 import { PageData } from '@/models'
 
 const pdfFile = ref<string | undefined>(undefined)
@@ -56,19 +57,23 @@ const setPdfFile = (file: File | FileList) => {
 const getTextFromImage = async () => {
   if (!imgSrc.value) return
   const worker = await createWorker('pol')
-  let tmpText: string[] = []
-  const rectangles = pages.value[page.value].rectangles
+  let tmpText: string = ''
+  const rectangles = (pages.value[page.value].rectangles ?? []).sort((r1, r2) => {
+    if (r1.top !== r2.top) return r1.top - r2.top
+    return r1.left - r2.left
+  })
   if (!rectangles?.length) {
     const { data } = await worker.recognize(imgSrc.value)
-    tmpText = [data.text]
+    tmpText = data.text
   } else {
     for (let i = 0; i < rectangles.length; i++) {
       const { data } = await worker.recognize(imgSrc.value, {
         rectangle: { ...rectangles[i] },
       })
-      tmpText.push(data.text)
+      tmpText += data.text
     }
   }
+  pages.value[page.value].ocrText = tmpText
   pages.value[page.value].text = tmpText
   await worker.terminate()
 }

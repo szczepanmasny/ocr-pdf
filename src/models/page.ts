@@ -1,6 +1,7 @@
 import { RectangleOptions } from './rectangle'
 
 export type PageData = {
-  text: string[]
+  ocrText: string
+  text: string
   rectangles?: RectangleOptions[]
 }

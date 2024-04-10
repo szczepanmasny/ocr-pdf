@@ -2,7 +2,6 @@
   <UiTextarea
     v-model="modelValue"
     v-bind="props"
-    rounded
     dark
   >
   </UiTextarea>
