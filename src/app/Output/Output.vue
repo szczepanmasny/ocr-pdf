@@ -57,7 +57,7 @@ const props = defineProps<{
 const bem = defineBem('app-output')
 
 const removeUnwantedBreaks = () => {
-  text.value = text.value.replace(/([a-zA-ZÀ-ž])(\n)([a-zA-zÀ-ž])/g, '$1 $3')
+  text.value = text.value.replace(/([^\n-])(\n)([^\n])/g, '$1 $3')
 }
 
 const removeDoubleNewLines = () => {
@@ -109,6 +109,8 @@ const restoreOcrText = () => {
     & textarea {
       font-size: 1.8rem !important;
       height: 100%;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
     }
   }
 }
